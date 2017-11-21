@@ -12,25 +12,35 @@ const client = new pg.Client({
 
 const searchParam = process.argv[2];
 
+function printRow(row) {
+  let dateOfBirth = row.birthdate.toISOString().slice(0,10);
+  let printString = `- ${row.id}: ${row.first_name} ${row.last_name}, born '${dateOfBirth}'`;
+  console.log(printString);
+}
+
+function printResultsTotal(result) {
+  console.log(`Found ${result.rowCount} person(s) by the name '${searchParam}':`);
+}
+
+function searchForName(name) {
+  client.query("SELECT * FROM famous_people WHERE first_name=$1 OR last_name=$1", [name], (err, result) => {
+    console.log("Searching...");
+    if (err) {
+      return console.error("error running query", err);
+    }
+    printResultsTotal(result);
+
+    result.rows.forEach(function(row) {
+      printRow(row);
+    });
+
+    client.end();
+  });
+}
 
 client.connect((err) => {
   if (err) {
     return console.error("Connection Error", err);
   }
-  client.query("SELECT * FROM famous_people WHERE first_name=$1 OR last_name=$1", [searchParam], (err, result) => {
-    console.log("Searching...");
-    if (err) {
-      return console.error("error running query", err);
-    }
-    let resultsTotal = result.rowCount;
-    console.log(`Found ${resultsTotal} person(s) by the name '${searchParam}':`);
-
-    result.rows.forEach(function(row) {
-      let dateOfBirth = row.birthdate.toISOString().slice(0,10);
-      let printString = `- ${row.id}: ${row.first_name} ${row.last_name}, born '${dateOfBirth}'`;
-      console.log(printString);
-    });
-
-    client.end();
-  });
+  searchForName(searchParam);
 });
