@@ -11,42 +11,34 @@ const knex = require('knex')({
     port     : settings.port,
     ssl      : settings.ssl
   },
-  searchPath: 'knex,public'
+  searchPath: ['knex', 'public']
 });
 
-
-function printRow(row) {
-  let dateOfBirth = row.birthdate.toISOString().slice(0,10);
-  let printString = `- ${row.id}: ${row.first_name} ${row.last_name}, born '${dateOfBirth}'`;
-  console.log(printString);
+function printResults(results) {
+  results.forEach(function(result) {
+    let dateOfBirth = result.birthdate.toISOString().slice(0,10);
+    let printString = `- ${result.id}: ${result.first_name} ${result.last_name}, born '${dateOfBirth}'`;
+    console.log(printString);
+  });
 }
 
 function printResultsTotal(result) {
-  console.log(`Found ${result.rowCount} person(s) by the name '${searchParam}':`);
-}
-
-function queryDatabase(name) {
-  client.query("SELECT * FROM famous_people WHERE first_name=$1 OR last_name=$1", [name], (err, result) => {
-    console.log("Searching...");
-    if (err) {
-      return console.error("error running query", err);
-    }
-    printResultsTotal(result);
-
-    result.rows.forEach(function(row) {
-      printRow(row);
-    });
-    client.end();
-  });
+  console.log(`Found ${result.length} person(s) by the name '${searchParam}':`);
 }
 
 function searchForName(name) {
-  client.connect((err) => {
-  if (err) {
-    return console.error("Connection Error", err);
-  }
-    queryDatabase(name);
-  });
+  knex.select().from('famous_people')
+    .where('first_name', name)
+    .orWhere('last_name', name)
+    .asCallback(function(err, rows) {
+      console.log("Searching...");
+      if (err) {
+        return console.error("error running query", err);
+      }
+      printResultsTotal(rows);
+      printResults(rows);
+      knex.destroy();
+    });
 }
 
 const searchParam = process.argv[2];
