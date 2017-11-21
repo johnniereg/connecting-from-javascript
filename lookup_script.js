@@ -10,8 +10,6 @@ const client = new pg.Client({
   ssl      : settings.ssl
 });
 
-const searchParam = process.argv[2];
-
 function printRow(row) {
   let dateOfBirth = row.birthdate.toISOString().slice(0,10);
   let printString = `- ${row.id}: ${row.first_name} ${row.last_name}, born '${dateOfBirth}'`;
@@ -22,7 +20,7 @@ function printResultsTotal(result) {
   console.log(`Found ${result.rowCount} person(s) by the name '${searchParam}':`);
 }
 
-function searchForName(name) {
+function queryDatabase(name) {
   client.query("SELECT * FROM famous_people WHERE first_name=$1 OR last_name=$1", [name], (err, result) => {
     console.log("Searching...");
     if (err) {
@@ -33,14 +31,21 @@ function searchForName(name) {
     result.rows.forEach(function(row) {
       printRow(row);
     });
-
     client.end();
   });
 }
 
-client.connect((err) => {
+function searchForName(name) {
+  client.connect((err) => {
   if (err) {
     return console.error("Connection Error", err);
   }
-  searchForName(searchParam);
-});
+    queryDatabase(name);
+  });
+}
+
+const searchParam = process.argv[2];
+
+searchForName(searchParam);
+
+
