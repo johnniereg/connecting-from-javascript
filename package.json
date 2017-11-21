@@ -4,6 +4,7 @@
   "description": "connect-from-js",
   "main": "index.js",
   "dependencies": {
+    "knex": "^0.14.1",
     "pg": "^7.4.0"
   },
   "devDependencies": {},
